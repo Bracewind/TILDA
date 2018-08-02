@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="methods" >
+        <item>Incremental Method</item>
+        <item>KNN method</item>
+    </string-array>
+</resources>
