@@ -124,6 +124,17 @@ public class DatasetManager extends FileManager {
     return vectorImagesLabeled;
   }
 
+  public String[] getLabels() {
+    File[] allPathLabels = mDatasetFolder.listFiles();
+
+    String[] allLabels = new String[allPathLabels.length];
+    for (int idClass = 0; idClass < allPathLabels.length; idClass++) {
+      //add label in array
+      allLabels[idClass] = allPathLabels[idClass].getName();
+    }
+    return allLabels;
+  }
+
   /**
    * It gives all the feature vector as follows:
    * allVector.get(i) contains all the feature vectors of labels.get(i)

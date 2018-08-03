@@ -26,7 +26,7 @@
     <string name="button_train_text">Train</string>
     <string name="button_test_text">Recognize</string>
     <string name="button_back_to_start_text">Main menu</string>
-    <string name="button_back_to_photo_text">Other photo</string>
+    <string name="button_back_to_photo_text">Take same class photo</string>
     <string name="announce_result">label found is :</string>
     <string name="print_save_path">saved path is :</string>
     <string name="ask_user_wait">please wait...</string>
@@ -44,4 +44,6 @@
     <string name="button_reinitialize_training">Forget training</string>
     <string name="button_testing_method">Test Accuracy</string>
     <string name="camera_picture_taken">Picture taken</string>
+    <string name="select_existing_class">select class</string>
+    <string name="button_photo_not_good">change photo</string>
 </resources>

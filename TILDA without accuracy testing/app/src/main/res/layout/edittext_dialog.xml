@@ -24,6 +24,15 @@
         android:textSize="15dp"
         android:layout_below="@id/dialog_title"
         />
+
+    <Button
+        android:id="@+id/display_existing_class"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/select_existing_class"
+        android:background="#dde5ad"
+        android:layout_alignBaseline="@id/dialog_positive_btn" />
+
     <Button
         android:id="@+id/dialog_positive_btn"
         android:layout_width="wrap_content"
@@ -43,4 +52,5 @@
         android:layout_marginRight="3dp"
         android:layout_alignBaseline="@id/dialog_positive_btn"
         />
+
 </RelativeLayout>

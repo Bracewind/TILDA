@@ -31,15 +31,21 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.example.gregoire.testmodule2.ExternalFileManager.DataHolder;
+import com.example.gregoire.testmodule2.PersonnalizedView.ItemClickSupport;
+import com.example.gregoire.testmodule2.PersonnalizedView.MyAdapter;
 
 import java.io.File;
 
@@ -55,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
   private Dialog mDialog;
   private boolean isTraining;
 
+  EditText class_given;
+
   //to draw
   private Canvas mCanvas;
   private Paint mPaint = new Paint();
@@ -62,6 +70,11 @@ public class MainActivity extends AppCompatActivity {
   private ImageView mImageView;
   private Rect mRect = new Rect();
   private Rect mBounds = new Rect();
+
+  //to display list of existing class
+  RecyclerView mRecyclerView;
+  MyAdapter mAdapter;
+  LinearLayoutManager mLayoutManager;
 
 
   @Override
@@ -166,6 +179,54 @@ public class MainActivity extends AppCompatActivity {
     mCanvas.drawCircle(50, 50, 40, mPaint);
   }
 
+  private Dialog createSelecterClassDialog() {
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+    LayoutInflater inflater = getLayoutInflater();
+    final View dialogView = inflater.inflate(R.layout.select_class_dialog, null);
+
+    mRecyclerView = dialogView.findViewById(R.id.list_known_class_name);
+
+    // Specify alert dialog is not cancelable/not ignorable
+    builder.setCancelable(false);
+
+    // Set the custom layout as alert dialog view
+    builder.setView(dialogView);
+
+    final Dialog d2 = builder.create();
+
+    // use this setting to improve performance if you know that changes
+    // in content do not change the layout size of the RecyclerView
+    mRecyclerView.setHasFixedSize(true);
+
+    // use a linear layout manager
+    mLayoutManager = new LinearLayoutManager(this);
+    mRecyclerView.setLayoutManager(mLayoutManager);
+
+    // specify an adapter (see also next example)
+    String[] allKnownLabels = DataHolder.getInstance().getDataset().getLabels();
+    if (allKnownLabels.length == 0) {
+      allKnownLabels = new String[1];
+      allKnownLabels[0] = "no existing class found";
+    }
+    mAdapter = new MyAdapter(allKnownLabels);
+    mRecyclerView.setAdapter(mAdapter);
+    ItemClickSupport.addTo(mRecyclerView)
+            .setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
+              @Override
+              public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+                String labelSelected = ((TextView) v).getText().toString();
+
+                class_given.setText(labelSelected);
+                d2.dismiss();
+              }
+            });
+
+    return d2;
+
+  }
+
   private Dialog createDialog() {
     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
@@ -180,6 +241,16 @@ public class MainActivity extends AppCompatActivity {
 
     final Dialog d = builder.create();
 
+    class_given = dialogView.findViewById(R.id.class_name);
+
+    Button selectExistingClass = dialogView.findViewById(R.id.display_existing_class);
+    selectExistingClass.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        createSelecterClassDialog().show();
+      }
+    });
+
     Button cancel = dialogView.findViewById(R.id.dialog_negative_btn);
     cancel.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -192,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
     confirm.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        String nameClassOfPhotoTaken = ((EditText) dialogView.findViewById(R.id.class_name)).getText().toString();
+        String nameClassOfPhotoTaken = class_given.getText().toString();
         d.dismiss();
 
         Intent intent = sendInfoToNextActivity();
