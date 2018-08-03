@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:keepScreenOn="true" >
+
+    <ProgressBar
+        android:id="@+id/determinateBar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="1000"/>
+
+    <TextView
+        android:id="@+id/total_time_approximated"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="time until end : "
+
+        app:layout_constraintTop_toBottomOf="@id/determinateBar"/>
+
+    <TextView
+        android:id="@+id/display_accuracy_for_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/total_time_approximated"
+        android:text="processing..."/>
+
+    <TextView
+        android:id="@+id/display_accuracy_for_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/display_accuracy_for_1"
+        android:text="processing..."/>
+
+</android.support.constraint.ConstraintLayout>
