@@ -9,3 +9,16 @@ If you modify this folder, you have to replace the folder Train and Test inside 
 The folder TILDA contains the application mobile and is ready to use
 
 For a direct use, consider using the apk provided in the APK folder
+
+Warning !!! This repository uses lfs to store the inception network. 
+
+To retrieve the network :
+first install git-lfs on ubuntu
+sudo apt install git-lfs
+
+then use 
+git lfs pull
+to retrieve the network.
+
+If it does not work first install lfs on your local git folder using
+git lfs install
