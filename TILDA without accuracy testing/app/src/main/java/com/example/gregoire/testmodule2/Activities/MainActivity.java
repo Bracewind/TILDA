@@ -16,12 +16,14 @@
 
 package com.example.gregoire.testmodule2.Activities;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -30,6 +32,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -42,12 +45,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.gregoire.testmodule2.ExternalFileManager.DataHolder;
 import com.example.gregoire.testmodule2.PersonnalizedView.ItemClickSupport;
 import com.example.gregoire.testmodule2.PersonnalizedView.MyAdapter;
+import com.example.gregoire.testmodule2.helpers.PermissionUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InputStream;
 
 import jp.wasabeef.blurry.Blurry;
 
@@ -57,6 +67,9 @@ import jp.wasabeef.blurry.Blurry;
 public class MainActivity extends AppCompatActivity {
 
   public static String TAG = "Main Activity";
+  public static boolean FROM_ASSETS = false;
+  private static final String neuralNetworkPath = "testInception.pb";
+  private static final String labelPath = "testInception.txt";
 
   private Dialog mDialog;
   private boolean isTraining;
@@ -76,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
   MyAdapter mAdapter;
   LinearLayoutManager mLayoutManager;
 
+  private static final int PERMISSION_CODE_READ_STORAGE = 3003;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +104,37 @@ public class MainActivity extends AppCompatActivity {
 
     //the tensorflow network is initialized here
     //WARNING : we need access to the assets folder to load the weights
-    DataHolder.getInstance().initializeDataHolder(getAssets(), pathDataset, kChosen, pChosen, 2048);
+    if (FROM_ASSETS) {
+      DataHolder.getInstance().initializeDataHolder(getAssets(), pathDataset, kChosen, pChosen, 2048);
+    }
+    else {
+      //get neural network and label stream
+      InputStream neuralNetworkis = new InputStream() {
+        @Override
+        public int read() throws IOException {
+          return 0;
+        }
+      };
+      InputStream labelis = new InputStream() {
+        @Override
+        public int read() throws IOException {
+          return 0;
+        }
+      };
+      if (PermissionUtils.isReadStorageGranted(this)) {
+        try {
+          neuralNetworkis = readFile(neuralNetworkPath);
+          labelis = readFile(labelPath);
+        }
+        catch (FileNotFoundException e) {
+
+        }
+      } else {
+        PermissionUtils.checkPermission(this, Manifest.permission.CAMERA,
+                PERMISSION_CODE_READ_STORAGE);
+      }
+      DataHolder.getInstance().initializeDataHolder(neuralNetworkis, labelis, pathDataset, kChosen, pChosen, 2048);
+    }
 
     Button test = findViewById(R.id.button_test);
 
@@ -160,6 +205,31 @@ public class MainActivity extends AppCompatActivity {
 
   }
 
+  protected InputStream readFile(String path) throws FileNotFoundException {
+    if (isExternalStorageReadable()) {
+      try {
+        File neuralNetwork = new File(Environment.getExternalStorageDirectory(), path);
+        Log.i(TAG, "path : " + Environment.getExternalStorageDirectory());
+        FileInputStream neuralNetworkStream = new FileInputStream(neuralNetwork);
+        return neuralNetworkStream;
+      }
+      catch (FileNotFoundException e) {
+        e.printStackTrace();
+        throw e;
+      }
+    }
+    throw new FileNotFoundException("file not readable");
+  }
+
+  protected boolean isExternalStorageReadable() {
+    if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) ||
+            Environment.MEDIA_MOUNTED_READ_ONLY.equals(Environment.getExternalStorageState())) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   @Override
   protected void onResume() {
     super.onResume();
@@ -177,6 +247,28 @@ public class MainActivity extends AppCompatActivity {
     imageView.setImageBitmap(mBitmap);
     mCanvas = new Canvas(mBitmap);
     mCanvas.drawCircle(50, 50, 40, mPaint);
+  }
+
+  /**
+   * Execute the code in agreement with the will of the user.
+   *
+   * @param requestCode
+   * @param permissions
+   * @param grantResults represents the will of the user
+   */
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    switch (requestCode) {
+      case PERMISSION_CODE_READ_STORAGE:
+        if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+          Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
+          finish();
+        }
+        break;
+    }
+    if (requestCode != PERMISSION_CODE_READ_STORAGE) {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   private Dialog createSelecterClassDialog() {

@@ -20,12 +20,17 @@ import android.graphics.Bitmap;
 import android.os.Trace;
 import android.util.Log;
 
+import com.example.gregoire.testmodule2.helpers.TensorFlowInferenceInterfaceCustom;
+import com.example.gregoire.testmodule2.helpers.TensorflowInferenceInterfaceBase;
+import com.example.gregoire.testmodule2.helpers.TensorflowInferenceInterfaceModified;
+
 import org.tensorflow.Operation;
 import org.tensorflow.Shape;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Vector;
 
@@ -60,7 +65,7 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
 
   private boolean logStats = false;
 
-  private TensorFlowInferenceInterface inferenceInterface;
+  private TensorFlowInferenceInterfaceCustom inferenceInterface;
 
   private TensorFlowImageClassifier() {}
 
@@ -86,6 +91,8 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
       float imageStd,
       String inputName,
       String outputName) {
+
+    //create network
     TensorFlowImageClassifier c = new TensorFlowImageClassifier();
     c.inputName = inputName;
     c.outputName = outputName;
@@ -94,9 +101,61 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
     // TODO(andrewharp): make this handle non-assets.
     String actualFilename = labelFilename.split("file:///android_asset/")[1];
     Log.i(TAG, "Reading labels from: " + actualFilename);
+    try {
+      initializeLabels(c, assetManager.open(actualFilename));
+    } catch (IOException e) {
+      throw new RuntimeException("Problem opening label file! in Tensorflow !" , e);
+    }
+
+    c.inferenceInterface = new TensorflowInferenceInterfaceBase(assetManager, modelFilename);
+
+    initializeNetwork(c, inputSize, imageMean, imageStd, outputName);
+
+    return c;
+  }
+
+  /**
+   * Initializes a native TensorFlow session for classifying images.
+   *
+   * @param neuralNetworkis The input stream representing the network.
+   * @param labelis The input stream representing the label.
+   * @param inputSize The input size. A square image of inputSize x inputSize is assumed.
+   * @param imageMean The assumed mean of the image values.
+   * @param imageStd The assumed std of the image values.
+   * @param inputName The label of the image input node.
+   * @param outputName The label of the output node.
+   * @throws IOException
+   */
+  public static FeatureExtractor create(
+          InputStream neuralNetworkis,
+          InputStream labelis,
+          int inputSize,
+          int imageMean,
+          float imageStd,
+          String inputName,
+          String outputName) {
+
+    //create network
+    TensorFlowImageClassifier c = new TensorFlowImageClassifier();
+    c.inputName = inputName;
+    c.outputName = outputName;
+
+    // Read the label names into memory.
+    initializeLabels(c, labelis);
+
+    c.inferenceInterface = new TensorflowInferenceInterfaceModified(neuralNetworkis);
+
+    initializeNetwork(c, inputSize, imageMean, imageStd, outputName);
+
+    return c;
+  }
+
+  private static void initializeLabels(
+          TensorFlowImageClassifier c,
+          InputStream labelis) {
     BufferedReader br;
     try {
-      br = new BufferedReader(new InputStreamReader(assetManager.open(actualFilename)));
+      br = new BufferedReader(new InputStreamReader(labelis));
       String line;
       while ((line = br.readLine()) != null) {
         c.labels.add(line);
@@ -105,8 +164,14 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
     } catch (IOException e) {
       throw new RuntimeException("Problem reading label file!" , e);
     }
+  }
 
-    c.inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFilename);
+  private static void initializeNetwork(
+          TensorFlowImageClassifier c,
+          int inputSize,
+          int imageMean,
+          float imageStd,
+          String outputName) {
 
     // The shape of the output is [N, NUM_CLASSES], where N is the batch size.
     final Operation operation = c.inferenceInterface.graphOperation(outputName);
@@ -129,7 +194,7 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
     c.floatValues = new float[inputSize * inputSize * 3];
     c.outputs = new float[numClasses];
 
-    return c;
+
   }
 
   public long sizeLastOutput() {

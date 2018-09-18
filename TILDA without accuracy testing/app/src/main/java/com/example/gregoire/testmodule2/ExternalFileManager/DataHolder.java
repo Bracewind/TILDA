@@ -2,6 +2,7 @@ package com.example.gregoire.testmodule2.ExternalFileManager;
 
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.renderscript.ScriptGroup;
 import android.util.Log;
 import android.util.Pair;
 
@@ -11,6 +12,7 @@ import com.example.gregoire.testmodule2.Classifier.TILDA;
 import com.example.gregoire.testmodule2.Classifier.TensorFlowImageClassifier;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 
@@ -52,6 +54,32 @@ public class DataHolder {
   int mK;
   int mP;
   ClassifierFromFeature mClassifierFromFeature;
+
+  public void initializeDataHolder(InputStream neuralNetworkis, InputStream labelis, File pathDatasetFolder, int k, int p, int sizeLastLayer) {
+    if (!initialized) {
+      mFeatureExtractor = TensorFlowImageClassifier.create(
+              neuralNetworkis,
+              labelis,
+              INPUT_SIZE,
+              IMAGE_MEAN,
+              IMAGE_STD,
+              INPUT_NAME,
+              OUTPUT_NAME_SPATIAL_SQUEEZE);
+
+      dataset = new DatasetManager(pathDatasetFolder);
+      Pair<ArrayList<String>, ArrayList<ArrayList<JSONParser>>> data = dataset.getAllDataAndLabelInJSON();
+      Log.i(TAG, data.first.toString());
+      try {
+        mClassifierFromFeature = new TILDA(k, p, sizeLastLayer, data.first, data.second);
+      } catch (IndexOutOfBoundsException e) {
+        e.printStackTrace();
+        dataset.reinitializeTraining();
+      }
+      initialized = true;
+    }
+    mK = k;
+    mP = p;
+  }
 
   public void initializeDataHolder(AssetManager assetManager, File pathDatasetFolder, int k, int p, int sizeLastLayer) {
     if (!initialized) {

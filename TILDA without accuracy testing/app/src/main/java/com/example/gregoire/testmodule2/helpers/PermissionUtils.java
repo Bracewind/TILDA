@@ -48,4 +48,10 @@ public class PermissionUtils {
                 Manifest.permission.CAMERA);
         return cameraPermissionGranted == PackageManager.PERMISSION_GRANTED;
     }
+
+    public static boolean isReadStorageGranted(Context context) {
+        int readStoragePermissionGranted = ContextCompat.checkSelfPermission(context,
+                Manifest.permission.READ_EXTERNAL_STORAGE);
+        return readStoragePermissionGranted == PackageManager.PERMISSION_GRANTED;
+    }
 }
