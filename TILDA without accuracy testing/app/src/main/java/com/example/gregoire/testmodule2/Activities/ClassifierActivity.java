@@ -47,16 +47,23 @@ public class ClassifierActivity extends Activity implements ClassifierCallback {
     //do the classification
 
     Bitmap image = DataHolder.getInstance().retrievePictureTaken();
-    classifierCalculator = new ClassifierCalculator(
-            DataHolder.getInstance().retrieveFeatureExtractor(),
-            DataHolder.getInstance().retrieveClassifierFromFeature(),
-            this,
-            image,
-            isTraining,
-            className
-    );
+    if (image == null) {
+      TextView recog = findViewById(R.id.label_found);
+      recog.setText("Error when loading the image, please try again");
+    }
+    else {
+      classifierCalculator = new ClassifierCalculator(
+              DataHolder.getInstance().retrieveFeatureExtractor(),
+              DataHolder.getInstance().retrieveClassifierFromFeature(),
+              this,
+              image,
+              isTraining,
+              className
+      );
 
-    classifierCalculator.execute();
+      classifierCalculator.execute();
+    }
+
 
     //initialize listeners
     Button backToPhoto = findViewById(R.id.back_to_photo);

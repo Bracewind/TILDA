@@ -95,114 +95,131 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Log.i(TAG, "path for NN : " + Environment.getExternalStorageDirectory().getAbsolutePath() + neuralNetworkPath);
     setContentView(R.layout.activity_main);
 
-    File pathDataset = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), getString(R.string.incremental_method_folder));
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-    Integer kChosen = Integer.valueOf(prefs.getString((String) getText(R.string.kGiven), "4"));
-    Integer pChosen = Integer.valueOf(prefs.getString((String) getText(R.string.pGiven), "4"));
+    Log.i(TAG, getApplicationInfo().dataDir);
 
-    //the tensorflow network is initialized here
-    //WARNING : we need access to the assets folder to load the weights
-    if (FROM_ASSETS) {
-      DataHolder.getInstance().initializeDataHolder(getAssets(), pathDataset, kChosen, pChosen, 2048);
-    }
-    else {
-      //get neural network and label stream
-      InputStream neuralNetworkis = new InputStream() {
-        @Override
-        public int read() throws IOException {
-          return 0;
-        }
-      };
-      InputStream labelis = new InputStream() {
-        @Override
-        public int read() throws IOException {
-          return 0;
-        }
-      };
-      if (PermissionUtils.isReadStorageGranted(this)) {
-        try {
-          neuralNetworkis = readFile(neuralNetworkPath);
-          labelis = readFile(labelPath);
-        }
-        catch (FileNotFoundException e) {
-
-        }
-      } else {
-        PermissionUtils.checkPermission(this, Manifest.permission.CAMERA,
-                PERMISSION_CODE_READ_STORAGE);
-      }
-      DataHolder.getInstance().initializeDataHolder(neuralNetworkis, labelis, pathDataset, kChosen, pChosen, 2048);
+    if (PermissionUtils.isReadStorageGranted(this)) {
+      initializeActivity();
+    } else {
+      PermissionUtils.checkPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE,
+              PERMISSION_CODE_READ_STORAGE);
     }
 
-    Button test = findViewById(R.id.button_test);
 
-    test.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        isTraining = false;
 
-        Intent intent = sendInfoToNextActivity();
-        startActivity(intent);
+  }
+
+  protected void initializeActivity() {
+    try {
+      File pathDataset = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), getString(R.string.incremental_method_folder));
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      Integer kChosen = Integer.valueOf(prefs.getString((String) getText(R.string.kGiven), "4"));
+      Integer pChosen = Integer.valueOf(prefs.getString((String) getText(R.string.pGiven), "4"));
+
+
+      //the tensorflow network is initialized here
+      //WARNING : we need access to the assets folder to load the weights
+      if (FROM_ASSETS) {
+        DataHolder.getInstance().initializeDataHolder(getAssets(), pathDataset, kChosen, pChosen, 2048);
       }
-    });
-
-    Button buttonTrain = findViewById(R.id.button_train);
-
-    buttonTrain.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        isTraining = true;
-
-        mDialog = createDialog();
-        mDialog.show();
+      else {
+        InputStream neuralNetworkis = readFile(neuralNetworkPath);
+        InputStream labelis = readFile(labelPath);
+        Log.i(TAG, "correctly initialized");
+        DataHolder.getInstance().initializeDataHolder(neuralNetworkis, labelis, pathDataset, kChosen, pChosen, 2048);
       }
 
+      //Continue the initialization
+      Button test = findViewById(R.id.button_test);
 
-    });
+      test.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          isTraining = false;
 
-    //Alert dialog to be sure the user wants to erase all the training
-    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-            this);
+          Intent intent = sendInfoToNextActivity();
+          startActivity(intent);
+        }
+      });
 
-    alertDialogBuilder.setTitle("Reinitialize training");
-    alertDialogBuilder
-            .setMessage("Are you sure you want to erase all the past experience of the method ?")
-            .setCancelable(false)
-            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                DataHolder.getInstance().getDataset().reinitializeTraining();
-                dialog.cancel();
-              }
-            })
-            .setNegativeButton("No", new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-              }
-            });
-    // create alert dialog
-    final AlertDialog alertDialog = alertDialogBuilder.create();
+      Button buttonTrain = findViewById(R.id.button_train);
 
-    View reinitializeButton = findViewById(R.id.button_reinitialize_training);
-    reinitializeButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        alertDialog.show();
-      }
-    });
+      buttonTrain.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          isTraining = true;
 
-    Button setting = findViewById(R.id.button_settings);
-    setting.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        Intent intent = new Intent(MainActivity.this, Preferences.class);
-        startActivity(intent);
-      }
-    });
+          mDialog = createDialog();
+          mDialog.show();
+        }
 
-    Log.i(TAG, "k value is : " + prefs.getString((String) getText(R.string.kGiven), "null"));
 
+      });
+
+      //Alert dialog to be sure the user wants to erase all the training
+      AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+              this);
+
+      alertDialogBuilder.setTitle("Reinitialize training");
+      alertDialogBuilder
+              .setMessage("Are you sure you want to erase all the past experience of the method ?")
+              .setCancelable(false)
+              .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                  DataHolder.getInstance().getDataset().reinitializeTraining();
+                  dialog.cancel();
+                }
+              })
+              .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                  dialog.cancel();
+                }
+              });
+      // create alert dialog
+      final AlertDialog alertDialog = alertDialogBuilder.create();
+
+      View reinitializeButton = findViewById(R.id.button_reinitialize_training);
+      reinitializeButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          alertDialog.show();
+        }
+      });
+
+      Button setting = findViewById(R.id.button_settings);
+      setting.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          Intent intent = new Intent(MainActivity.this, Preferences.class);
+          startActivity(intent);
+        }
+      });
+
+      Log.i(TAG, "k value is : " + prefs.getString((String) getText(R.string.kGiven), "null"));
+
+
+    }
+    catch (FileNotFoundException e) {
+      e.printStackTrace();
+      //Alert dialog if problem during installation
+      AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+              this);
+
+      alertDialogBuilder.setTitle("An error occured reading the network");
+      alertDialogBuilder
+              .setMessage("An error occured when reading the network, try installing again the application")
+              .setCancelable(false)
+              .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+
+                  dialog.cancel();
+                }
+              });
+
+      alertDialogBuilder.create().show();
+    }
   }
 
   protected InputStream readFile(String path) throws FileNotFoundException {
@@ -218,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
         throw e;
       }
     }
-    throw new FileNotFoundException("file not readable");
+    throw new FileNotFoundException("No neural network or label found");
   }
 
   protected boolean isExternalStorageReadable() {
@@ -264,6 +281,7 @@ public class MainActivity extends AppCompatActivity {
           Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
           finish();
         }
+        initializeActivity();
         break;
     }
     if (requestCode != PERMISSION_CODE_READ_STORAGE) {

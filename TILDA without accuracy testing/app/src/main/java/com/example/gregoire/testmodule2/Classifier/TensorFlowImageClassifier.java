@@ -142,6 +142,7 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
 
     // Read the label names into memory.
     initializeLabels(c, labelis);
+    int cklqdmsfjk = 4;
 
     c.inferenceInterface = new TensorflowInferenceInterfaceModified(neuralNetworkis);
 
@@ -158,6 +159,7 @@ public class TensorFlowImageClassifier implements FeatureExtractor {
       br = new BufferedReader(new InputStreamReader(labelis));
       String line;
       while ((line = br.readLine()) != null) {
+        Log.i(TAG, line);
         c.labels.add(line);
       }
       br.close();
